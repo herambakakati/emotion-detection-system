@@ -1,10 +1,5 @@
 import streamlit as st
-import tensorflow as tf
-
-from transformers import (
-    DistilBertTokenizer,
-    TFDistilBertForSequenceClassification
-)
+import pickle
 import re
 import nltk
 
@@ -354,40 +349,17 @@ except:
 @st.cache_resource
 def load_model():
 
-    tokenizer = DistilBertTokenizer.from_pretrained(
-        "./distilbert_emotion_model",
-        local_files_only=True
+    model = pickle.load(
+        open("best_emotion_model.pkl", "rb")
     )
 
-    model = TFDistilBertForSequenceClassification.from_pretrained(
-        "distilbert_emotion_model"
+    tfidf = pickle.load(
+        open("tfidf_vectorizer.pkl", "rb")
     )
 
-    return tokenizer, model
+    return model, tfidf
 
-
-tokenizer, model = load_model()
-
-def predict_emotion(text):
-
-    encoded = tokenizer(
-        text,
-        truncation=True,
-        padding=True,
-        max_length=128,
-        return_tensors="tf"
-    )
-
-    outputs = model(encoded)
-
-    prediction = int(
-        tf.argmax(
-            outputs.logits,
-            axis=1
-        ).numpy()[0]
-    )
-
-    return prediction
+model, tfidf = load_model()
 
 # =====================================================
 # NLP PREPROCESSING
@@ -568,8 +540,14 @@ if st.button("🚀 Analyze Emotion"):
 
     else:
 
-        prediction = predict_emotion(user_text)
+        cleaned = clean_text(user_text)
+
+        vector = tfidf.transform([cleaned])
+
+        prediction = model.predict(vector)[0]
+
         emotion = emotion_map[prediction]
+
         color = emotion_colors[emotion]
 
         emoji_map = {
@@ -726,7 +704,8 @@ and state-of-the-art Transformer models such as BERT, DistilBERT, and RoBERTa.
 Transformer models achieved the highest performance, reaching over 92%
 classification accuracy on the evaluation dataset.
             
-The deployed application uses DistilBERT, a state-of-the-art Transformer-based Deep Learning model that achieved 92.60% classification accuracy. DistilBERT provides strong contextual language understanding while maintaining efficient inference speed, making it suitable for real-time emotion detection.
+The deployed application uses an optimized model for fast real-time emotion prediction while the Deep Learning and Transformer models are included as part of the complete project implementation and evaluation.
+
 </div>
             
 </div>
@@ -768,10 +747,8 @@ EmotionSense AI combines traditional Machine Learning, Deep Learning,
 and Transformer-based architectures to perform intelligent emotion analysis.
 
 The system applies advanced NLP preprocessing techniques and leverages
-multiple modeling approaches including RNN, LSTM, GRU, BERT,
-DistilBERT, and RoBERTa.
-
-For deployment, DistilBERT was selected as the final model due to its high accuracy and efficient inference performance.
+multiple modeling approaches including SVM, RNN, LSTM, GRU, BERT,
+DistilBERT, and RoBERTa for emotion classification.
 
 By learning contextual and semantic relationships within textual data,
 the platform delivers accurate emotion detection across diverse text inputs,
